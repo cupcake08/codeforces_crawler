@@ -2,9 +2,9 @@
 
 clear_stuff() {
     rm -f myC
-    rm -rf *.txt 
+    rm -f *.txt 
     cd ..
-    rm *.txt
+    rm -I *.txt
 }
 
 # only for testing for now
