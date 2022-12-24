@@ -1,4 +1,14 @@
 #!/bin/sh
+
+clear_stuff() {
+    rm -f myC
+    rm -rf *.txt 
+    cd ..
+    rm *.txt
+}
+
+# only for testing for now
+go run crawler.go
 cd test
 if g++ test.cpp -o myC; then
     (./myC < ../input0.txt) > output0_test.txt
@@ -14,4 +24,5 @@ if g++ test.cpp -o myC; then
     else
         echo "Test 1 failed"
     fi
+    clear_stuff
 fi
