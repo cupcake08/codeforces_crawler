@@ -1,15 +1,15 @@
-package codeforcescrawler 
+package codeforcescrawler
 
 import (
 	"fmt"
 	"log"
 	"os"
+
 	"github.com/gocolly/colly/v2"
 )
 
 type App struct {
 	collector *colly.Collector
-	pIndex string 
 	contestId int
 }
 
@@ -22,21 +22,26 @@ func write_to_file(fileName string, content []byte) {
 	file.Write(content)
 }
 
-func NewApp(index string,contestId int) *App {
+func NewApp(contestId int) *App {
 	return &App{
-		collector: colly.NewCollector(),
-		pIndex: index,
+		collector: colly.NewCollector(
+			colly.MaxDepth(1),
+			colly.Async(true),
+		),
 		contestId: contestId,
 	}
 }
 
-func (app *App) DoWork() {
-	uri := fmt.Sprintf("https://codeforces.com/contest/%d/problem/%s",app.contestId,app.pIndex)
-	app.collector.OnHTML("div.sample-tests", func(h *colly.HTMLElement) {
+// This will crawl codeforces website and store the sample tests of [pIndex] problem
+// inputs and outputs to desired files.
+func (app *App) GetTestCases(pid string) {
+	c := app.collector.Clone()
+	uri := fmt.Sprintf("https://codeforces.com/contest/%d/problem/%s", app.contestId, pid)
+	c.OnHTML("div.sample-tests", func(h *colly.HTMLElement) {
 		// input handler
 		h.ForEach("div.input", func(i int, h *colly.HTMLElement) {
 			child := h.ChildAttrs("div", "class")
-			filename := fmt.Sprintf("input%d.txt", i)
+			filename := fmt.Sprintf("input_%d.txt", i)
 			if len(child) > 1 {
 				file, err := os.Create(filename)
 				if err != nil {
@@ -54,19 +59,24 @@ func (app *App) DoWork() {
 				write_to_file(filename, content)
 			}
 		})
-
+		fmt.Println("Input File/s Written")
 		// output handler
 		h.ForEach("div.output", func(i int, h *colly.HTMLElement) {
-			filename := fmt.Sprintf("output%d.txt", i)
+			filename := fmt.Sprintf("output_%d.txt", i)
 			content := []byte(h.ChildText("pre") + "\n")
 			write_to_file(filename, content)
 		})
+		fmt.Println("Output File/s Written")
 	})
 
-	app.collector.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting:",r.URL)
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting:", r.URL)
 	})
 
-	app.collector.Visit(uri)
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	})
+
+	c.Visit(uri)
+	c.Wait()
 }
-
