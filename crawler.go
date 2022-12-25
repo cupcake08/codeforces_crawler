@@ -1,13 +1,17 @@
-package main
+package codeforcescrawler 
 
 import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
-
 	"github.com/gocolly/colly/v2"
 )
+
+type App struct {
+	collector *colly.Collector
+	pIndex string 
+	contestId int
+}
 
 func write_to_file(fileName string, content []byte) {
 	file, err := os.Create(fileName)
@@ -18,19 +22,17 @@ func write_to_file(fileName string, content []byte) {
 	file.Write(content)
 }
 
-func main() {
-	dir, _ := os.ReadDir(".")
-
-	for _, val := range dir {
-		fileInfo, _ := val.Info()
-		filename := fileInfo.Name()
-		if strings.Contains(filename, ".txt") {
-			os.Remove(filename)
-		}
+func NewApp(index string,contestId int) *App {
+	return &App{
+		collector: colly.NewCollector(),
+		pIndex: index,
+		contestId: contestId,
 	}
-	c := colly.NewCollector()
+}
 
-	c.OnHTML("div.sample-tests", func(h *colly.HTMLElement) {
+func (app *App) DoWork() {
+	uri := fmt.Sprintf("https://codeforces.com/contest/%d/problem/%s",app.contestId,app.pIndex)
+	app.collector.OnHTML("div.sample-tests", func(h *colly.HTMLElement) {
 		// input handler
 		h.ForEach("div.input", func(i int, h *colly.HTMLElement) {
 			child := h.ChildAttrs("div", "class")
@@ -41,8 +43,8 @@ func main() {
 					log.Fatal(err.Error())
 				}
 				defer file.Close()
-				h.ForEach("pre > div", func(i int, h *colly.HTMLElement) {
-					_, err := file.WriteString(fmt.Sprintf("%s\n", h.Text))
+				h.ForEach("pre > div", func(_ int, h *colly.HTMLElement) {
+					_, err := file.WriteString(h.Text + "\n")
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -61,10 +63,10 @@ func main() {
 		})
 	})
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting: ", r.URL)
+	app.collector.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting:",r.URL)
 	})
 
-	// c.Visit("https://codeforces.com/contest/1763/problem/A")
-	c.Visit("https://codeforces.com/contest/1763/problem/F")
+	app.collector.Visit(uri)
 }
+
