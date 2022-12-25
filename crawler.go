@@ -8,7 +8,7 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-type App struct {
+type Contest struct {
 	collector *colly.Collector
 	contestId int
 }
@@ -22,8 +22,8 @@ func write_to_file(fileName string, content []byte) {
 	file.Write(content)
 }
 
-func NewApp(contestId int) *App {
-	return &App{
+func NewContest(contestId int) *Contest {
+	return &Contest{
 		collector: colly.NewCollector(
 			colly.MaxDepth(1),
 			colly.Async(true),
@@ -34,7 +34,7 @@ func NewApp(contestId int) *App {
 
 // This will crawl codeforces website and store the sample tests of [pIndex] problem
 // inputs and outputs to desired files.
-func (app *App) GetTestCases(pid string) {
+func (app *Contest) GetTestCases(pid string) {
 	c := app.collector.Clone()
 	uri := fmt.Sprintf("https://codeforces.com/contest/%d/problem/%s", app.contestId, pid)
 	c.OnHTML("div.sample-tests", func(h *colly.HTMLElement) {

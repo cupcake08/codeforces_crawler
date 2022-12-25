@@ -6,7 +6,7 @@ import (
 )
 
 func Test1(t *testing.T) {
-	crawler := NewApp(1763)
+	crawler := NewContest(1763)
 	crawler.GetTestCases("D")
 	time.Sleep(time.Second * 2)
 	crawler.GetTestCases("A")
